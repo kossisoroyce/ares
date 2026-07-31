@@ -83,6 +83,23 @@ ares status
 ares cases list
 ```
 
+## Deploy alongside your backend
+
+Ares watches the host/kernel, so it is **language-agnostic** — Python, Rust, Go,
+Node, Java, whatever your backend is. Ship it next to your app on your platform:
+
+| Platform | Guide |
+| -------- | ----- |
+| Docker / Compose | [docs/deploy/docker.md](docs/deploy/docker.md) |
+| Fly.io | [docs/deploy/fly-io.md](docs/deploy/fly-io.md) |
+| Railway | [docs/deploy/railway.md](docs/deploy/railway.md) |
+| Kubernetes (DaemonSet or sidecar) | [docs/deploy/kubernetes.md](docs/deploy/kubernetes.md) |
+| Bare VM / systemd | [docs/deployment.md](docs/deployment.md) |
+
+Start at the [deployment hub](docs/deploy/README.md) for the host-level vs
+in-container decision and the eBPF-vs-fallback reality on managed PaaS. Using an
+AI coding agent to integrate? Point it at [`AGENTS.md`](AGENTS.md).
+
 ## AI investigation (OpenRouter by default)
 
 The default provider is **OpenRouter**, so you can run *any* model with two
