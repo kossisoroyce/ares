@@ -1,8 +1,7 @@
 <h1 align="center">Ares</h1>
 
 <p align="center">
-  <strong>AI-native host security investigator for Linux.</strong><br>
-  Continuous eBPF telemetry with minute-by-minute AI investigation.
+  Ares runs on your Linux servers and works out what an attacker did.
 </p>
 
 <p align="center">
@@ -14,17 +13,18 @@
   <a href="https://github.com/astral-sh/ruff"><img alt="Ruff" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json"></a>
 </p>
 
-> An AI-native host investigation and response layer for production Linux infrastructure.
+Ares records what programs do on a machine: process activity, network
+connections, file changes, logins, and the tricks attackers use to stick around
+after a reboot. Cheap rules run over those events as they arrive and flag
+anything that looks off. Once a minute a model reads back over the recent
+activity and works out a story for it, so you find out what ran and whether any
+of it lines up with a real attack.
 
-Ares continuously records process, network, filesystem, identity and
-persistence events, runs deterministic detection in real time, and every minute
-runs an AI investigation cycle that reconstructs suspicious activity into an
-evidence-backed verdict.
-
-The design principle (spec §1):
-
-> The daemon records what happened. The detection engine decides what deserves
-> attention. The AI investigator determines what the evidence means.
+The three parts stay separate on purpose. Collecting events is cheap, so that
+part runs constantly in the background. A model is the expensive bit, both in
+money and in the second or two it takes to answer, which is why it only sees the
+cases that are hard enough to need judgment. The plain rules in the middle
+decide which cases those are.
 
 ## Architecture
 
@@ -58,20 +58,30 @@ kernel/OS ──► sensors ──► redaction + enrichment ──► SQLite st
 
 ## Platform support
 
-The first release targets Linux (Ubuntu/Debian/Amazon Linux/Rocky/Alma). The
-sensor layer is abstracted: eBPF is preferred on Linux, with an automatic
-procfs/psutil/inotify fallback (spec §8.2) that also lets the full pipeline run
-on macOS for development.
+Ares is built for Linux. It has been run on Ubuntu, Debian, Amazon Linux, Rocky,
+and Alma. On those machines it reads events straight from the kernel using eBPF.
+When the kernel won't allow that, it falls back to reading `/proc` and watching
+the filesystem. The fallback path is slower. It also runs on a Mac, which helps
+while you're writing code against it.
 
 ## Install
 
 ```bash
-pip install -e ".[dev,fs]"       # from source
+pip install ares-agent
 ```
 
-Optional extras: `ai` (Anthropic-native provider), `api` (local HTTP API),
-`fs` (watchdog filesystem watcher). The OpenAI SDK (used for OpenRouter) is a
-core dependency.
+From source, if you want to hack on it:
+
+```bash
+git clone https://github.com/kossisoroyce/ares
+cd ares
+pip install -e ".[dev,fs]"
+```
+
+A few extras are optional. `ai` pulls in the Anthropic client for talking to
+Anthropic directly. `api` gives you a local HTTP server. `fs` adds a filesystem
+watcher that mostly helps during development. None of them matter for the
+default OpenRouter setup, since the OpenAI client is already a core dependency.
 
 ## Quick start (dev, no root)
 
@@ -86,8 +96,9 @@ ares cases list
 
 ## Deploy alongside your backend
 
-Ares watches the host/kernel, so it is **language-agnostic** — Python, Rust, Go,
-Node, Java, whatever your backend is. Ship it next to your app on your platform:
+Ares watches the host, so it doesn't care what your app is written in. Python,
+Rust, Go, Node, Java: it treats them all the same. Run it next to your app
+wherever that app already lives.
 
 | Platform | Guide |
 | -------- | ----- |
@@ -97,38 +108,41 @@ Node, Java, whatever your backend is. Ship it next to your app on your platform:
 | Kubernetes (DaemonSet or sidecar) | [docs/deploy/kubernetes.md](docs/deploy/kubernetes.md) |
 | Bare VM / systemd | [docs/deployment.md](docs/deployment.md) |
 
-Start at the [deployment hub](docs/deploy/README.md) for the host-level vs
-in-container decision and the eBPF-vs-fallback reality on managed PaaS. Using an
-AI coding agent to integrate? Point it at [`AGENTS.md`](AGENTS.md).
+The [deployment hub](docs/deploy/README.md) walks through the one real choice you
+have to make, which is whether Ares runs on the host or inside your container,
+and what that means for eBPF on a managed platform. If you're using an AI coding
+agent to wire it in, point the agent at [`AGENTS.md`](AGENTS.md).
 
 ## AI investigation (OpenRouter by default)
 
-The default provider is **OpenRouter**, so you can run *any* model with two
-environment variables — no code or config changes:
+OpenRouter is the default, so you can point Ares at almost any model by setting
+two environment variables. You leave the code and the config file alone.
 
 ```bash
 export OPENROUTER_API_KEY=sk-or-...
 export OPENROUTER_MODEL=anthropic/claude-3.5-sonnet   # any OpenRouter model id
 ```
 
-Other backends (set `investigation.model_provider` to match):
+Other backends work too. Set `investigation.model_provider` to match.
 
 | Provider | Env vars |
 | -------- | -------- |
 | `openrouter` (default) | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` |
 | `openai` / self-hosted gateway | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` |
 | `anthropic` | `ANTHROPIC_API_KEY` (`pip install -e ".[ai]"`) |
-| `local` | none — deterministic, no external model (spec §11.3) |
+| `local` | none, deterministic, no external model (spec §11.3) |
 
-If no credentials are present the investigator automatically **falls back to
-`local`**, so a fresh install runs with zero configuration and lights up the
-moment you set the env vars. Secrets are read from the environment, never stored
-in config. See [`examples/ares.env.example`](examples/ares.env.example).
+When there's no key set, Ares uses the built-in `local` analyzer, so a fresh
+install still works before you've configured anything. Add the env vars and it
+switches over to the model on the next cycle. Keys come from the environment, so
+they stay out of your config file. See
+[`examples/ares.env.example`](examples/ares.env.example).
 
 ## Notifications
 
-Ares pushes incidents out over **outbound-only** channels — nothing inbound has
-to be exposed on the host. Configure any subset via env vars:
+When something fires, Ares sends the alert out to you. Every channel makes an
+outbound connection, so you don't have to open a port on the box. Turn on
+whatever your team already uses:
 
 ```bash
 export ARES_NOTIFY_MIN_SEVERITY=high                    # global floor
@@ -150,20 +164,25 @@ ares notify test         # send a test alert through every channel
 | Email / SMTP | universal fallback | global `min_severity` |
 | PagerDuty | waking on-call for real incidents | own `min_severity` (default `critical`) |
 
-Alert fatigue is controlled by the global severity floor, PagerDuty's separate
-higher threshold, and case deduplication (repeat activity updates one case /
-one PagerDuty incident rather than paging repeatedly).
+A few things keep the noise down. There's a severity floor, and anything under
+it stays quiet. PagerDuty sits behind a higher bar of its own, so on-call only
+hears about the serious incidents. When the same activity keeps happening, it
+folds into the case that's already open, so it pages you once and then goes quiet.
 
 ## Response safety
 
-- Default mode is `recommend`: nothing destructive runs automatically.
-- Only allow-listed **evidence** actions (hash/capture/preserve) run without
-  approval. Containment/recovery actions require explicit operator approval and
-  carry rollback metadata (spec §22.3).
-- `delete_file` and `execute_generated_shell_command` are **prohibited**; the
-  language model never receives shell access (spec §22.3).
+By default Ares only recommends. It won't change anything on the host on its own.
+
+The harmless evidence steps run by themselves, like hashing a suspect file or
+grabbing a snapshot of a process. Anything with real consequences, such as
+isolating a container or killing a process, waits for you to approve it, and Ares
+records how to undo it. Two things stay off the table completely: deleting files,
+and running shell commands the model wrote. The model never gets a shell
+(spec §22.3).
 
 ## Python API
+
+Everything the CLI does is available from Python.
 
 ```python
 from ares import Ares
@@ -182,8 +201,9 @@ pytest            # unit + integration + attack simulations (safe fixtures)
 
 ## Status
 
-This repository implements Phase 1 and the core of Phase 2 (spec §36). The
-eBPF programs (`bpf/`) and privileged response helper are Linux integration
-steps; see `docs/` for the roadmap and security model.
+What's here covers Phase 1 and most of Phase 2 from the spec (§36). The eBPF
+programs under `bpf/` and the privileged response helper still need wiring up on
+a real Linux host. The `docs/` folder has the roadmap and the security model if
+you want the detail.
 
 Licensed under Apache-2.0.
