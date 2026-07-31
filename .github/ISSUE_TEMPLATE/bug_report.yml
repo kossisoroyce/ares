@@ -1,0 +1,65 @@
+name: Bug report
+description: Report a defect in Ares
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. Please do **not** include secrets, tokens, or
+        raw logs that may contain sensitive data.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+      placeholder: When I run `ares ...`, I expected X but got Y.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ares init
+        2. ares daemon run
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Ares version
+      description: Output of `ares --version` or the installed `ares-agent` version.
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Ubuntu / Debian
+        - Amazon Linux / Rocky / Alma
+        - Other Linux
+        - macOS (dev)
+        - Container / Kubernetes
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "3.12"
+  - type: dropdown
+    id: sensor
+    attributes:
+      label: Sensor backend
+      options:
+        - eBPF
+        - procfs/psutil fallback
+        - not sure
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Redacted output from `ares -v ...`. Code will be formatted automatically.
+      render: shell

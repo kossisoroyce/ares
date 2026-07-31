@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/kossisoroyce/ares/security/advisories/new
+    about: Please report security issues privately via a GitHub Security Advisory — do not open a public issue.
+  - name: Questions & discussion
+    url: https://github.com/kossisoroyce/ares/discussions
+    about: Ask questions and share ideas in Discussions.

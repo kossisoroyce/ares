@@ -1,0 +1,26 @@
+[Unit]
+Description=Ares continuous telemetry daemon (Project Ares)
+Documentation=https://example.invalid/ares
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Secrets (OPENROUTER_API_KEY, ARES_SLACK_WEBHOOK, ...) live here, not in config.
+EnvironmentFile=-/etc/ares/ares.env
+ExecStart=/usr/bin/ares daemon run --config /etc/ares/config.yaml
+Restart=always
+RestartSec=2
+# Privilege separation (spec 32.1): the sensor needs kernel access; the rest
+# runs unprivileged. On a hardened deployment split this into two units.
+AmbientCapabilities=CAP_BPF CAP_PERFMON CAP_SYS_PTRACE CAP_DAC_READ_SEARCH
+NoNewPrivileges=false
+ProtectSystem=strict
+ReadWritePaths=/var/lib/ares
+ProtectHome=read-only
+PrivateTmp=true
+# Recover from crashes and continue from the durable watermark (spec 25.2).
+WatchdogSec=30
+
+[Install]
+WantedBy=multi-user.target
