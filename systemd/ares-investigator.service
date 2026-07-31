@@ -1,0 +1,22 @@
+[Unit]
+Description=Ares investigation cycle (Project Ares)
+After=ares-daemon.service
+Requires=ares-daemon.service
+
+[Service]
+Type=oneshot
+# The investigator needs the AI provider key + notification secrets at runtime.
+EnvironmentFile=-/etc/ares/ares.env
+# Runs one investigation cycle; the .timer triggers it every minute (spec 15).
+# Unprivileged: the investigator only needs read access to the event store.
+ExecStart=/usr/bin/ares investigator run --once --config /etc/ares/config.yaml
+User=ares
+Group=ares
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/ares
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

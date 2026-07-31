@@ -1,0 +1,13 @@
+[Unit]
+Description=Run the Ares investigation cycle every minute (spec 15.1)
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec=60
+AccuracySec=5s
+# If the machine was asleep, run once on resume rather than backfilling.
+Persistent=false
+Unit=ares-investigator.service
+
+[Install]
+WantedBy=timers.target

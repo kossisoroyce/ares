@@ -1,0 +1,109 @@
+# Example ares configuration (spec section 27).
+version: 1
+
+host:
+  role: production-api
+  environment: production
+  criticality: high
+
+daemon:
+  enabled: true
+  event_buffer_size: 65536
+  batch_size: 250
+  flush_interval_ms: 250
+
+sensors:
+  process:
+    enabled: true
+  network:
+    enabled: true
+  filesystem:
+    enabled: true
+    protected_paths:
+      - /etc
+      - /usr/local/bin
+      - /opt/app
+      - /home/*/.ssh
+      - /root/.ssh
+    ignored_paths:
+      - /var/log
+      - /tmp/application-cache
+  identity:
+    enabled: true
+  containers:
+    enabled: false
+
+investigation:
+  enabled: true
+  interval_seconds: 60
+  timeout_seconds: 90
+  max_cases_per_cycle: 10
+  max_tool_calls_per_case: 12
+  # Default provider is OpenRouter — pick ANY model with two env vars:
+  #   export OPENROUTER_API_KEY=sk-or-...
+  #   export OPENROUTER_MODEL=anthropic/claude-3.5-sonnet   # or any OpenRouter id
+  # Leave `model` empty to read OPENROUTER_MODEL from the environment.
+  # Other options: "openai" (OPENAI_API_KEY/OPENAI_BASE_URL/OPENAI_MODEL),
+  # "anthropic" (ANTHROPIC_API_KEY), or "local" (deterministic, no API key).
+  # If credentials are missing, the investigator falls back to "local".
+  model_provider: openrouter
+  model: ""
+  access_mode: read_only
+
+detection:
+  immediate_alert_threshold: 0.90
+  investigation_threshold: 0.60
+  retain_threshold: 0.30
+  learning_period_days: 7
+
+response:
+  mode: recommend
+  automatic_actions:
+    - capture_process_state
+    - hash_file
+    - preserve_logs
+  approval_required:
+    - stop_process
+    - isolate_container
+    - block_destination
+    - disable_user
+  prohibited:
+    - delete_file
+    - execute_generated_shell_command
+
+storage:
+  engine: sqlite
+  path: /var/lib/ares/ares.db
+  raw_event_retention_hours: 24
+  case_event_retention_days: 90
+
+privacy:
+  redact_secrets: true
+  send_raw_logs_to_model: false
+  send_file_contents_to_model: false
+  include_command_arguments: redacted
+
+# Notifications (spec §27). Secrets are best supplied via env vars (see
+# examples/ares.env.example) rather than committed to this file.
+notifications:
+  console: true
+  # Global floor — nothing below this severity is sent anywhere.
+  min_severity: high
+  # Slack incoming webhook (or env ARES_SLACK_WEBHOOK).
+  slack_webhook: null
+  # Generic JSON webhook — route to any internal system (or env ARES_NOTIFY_WEBHOOK).
+  webhook: null
+  email:
+    enabled: false
+    smtp_host: null          # or env ARES_SMTP_HOST
+    smtp_port: 587
+    username: null           # or env ARES_SMTP_USER
+    password: null           # PREFER env ARES_SMTP_PASSWORD
+    use_tls: true
+    from_addr: null          # or env ARES_SMTP_FROM
+    to_addrs: []             # or env ARES_SMTP_TO (comma-separated)
+  pagerduty:
+    enabled: false
+    routing_key: null        # PREFER env ARES_PAGERDUTY_ROUTING_KEY
+    # Page on-call only for the most urgent incidents.
+    min_severity: critical
