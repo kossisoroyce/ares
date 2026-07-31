@@ -3,7 +3,7 @@
 The container patterns here are the building block for Fly.io, Railway, Render,
 and any container platform.
 
-## Pattern A — Python backend, Ares in the same image
+## Pattern A: Python backend, Ares in the same image
 
 Install `ares-agent` next to your app and start both from an entrypoint.
 
@@ -26,7 +26,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 ```bash
 #!/usr/bin/env sh
-# entrypoint.sh — start Ares in the background, then exec your app as PID 1.
+# entrypoint.sh: start Ares in the background, then exec your app as PID 1.
 set -e
 
 mkdir -p "${ARES_STATE_DIR:-/data/ares}"
@@ -42,10 +42,10 @@ exec gunicorn app:app --bind 0.0.0.0:8080
 > `honcho`) if you want proper signal handling and restart-on-crash for the
 > background processes. The `&` approach is fine to start.
 
-## Pattern B — Non-Python backend (Rust/Go/Node), Ares as a sidecar {#sidecar}
+## Pattern B: sidecar for a non-Python backend (Rust/Go/Node) {#sidecar}
 
-Your compiled app image has no Python, so run Ares as a **second service** that
-shares the app's process namespace so it can see the app's processes.
+Your compiled app image has no Python in it. Run Ares as a second service that
+shares the app's process namespace, which lets it see the app's processes.
 
 ```yaml
 # docker-compose.yml
@@ -74,8 +74,8 @@ volumes:
   ares-data:
 ```
 
-Bake a dedicated Ares image instead of `pip install` at boot for faster,
-reproducible starts:
+For faster, repeatable starts, bake a dedicated Ares image so you skip the
+boot-time `pip install`:
 
 ```dockerfile
 # Dockerfile.ares
@@ -85,7 +85,7 @@ ENV ARES_STATE_DIR=/data/ares
 ENTRYPOINT ["sh","-c","ares init; ares daemon run & while true; do ares investigator run --once; sleep 60; done"]
 ```
 
-## Enabling eBPF in a container (optional, host-level power)
+## Enabling eBPF in a container (optional)
 
 On a host you control (your own Docker host / VM), grant the kernel access so
 Ares uses eBPF instead of the fallback:
@@ -100,7 +100,7 @@ docker run --rm \
   ghcr.io/kossisoroyce/ares:latest    # or your own image
 ```
 
-> Managed PaaS won't grant these — that's expected. Ares falls back to procfs
+> Managed PaaS won't grant these, which is normal. Ares falls back to procfs,
 > and `ares status` will show `ebpf_process_events: false`.
 
 ## Persistence

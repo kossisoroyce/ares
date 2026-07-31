@@ -21,11 +21,12 @@ ares status
 
 ### eBPF prerequisites
 
-Kernel ≥ 5.8 with BTF, plus `clang`/`libbpf`. Build the programs from `bpf/`
-(see `bpf/README.md`). Without eBPF the daemon automatically falls back to
-procfs/psutil/audit collectors (spec §8.2) — `ares status` shows which
-capabilities are active. The fallback **cannot** capture processes that start
-and exit between polls; eBPF is required for full short-lived-process coverage.
+You need kernel 5.8 or newer with BTF, plus `clang` and `libbpf`. Build the
+programs from `bpf/` (see `bpf/README.md`). When eBPF can't load, the daemon
+falls back to the procfs, psutil, and audit collectors (spec §8.2), and
+`ares status` shows you which capabilities came up. That fallback misses
+processes that begin and end between polls, so eBPF is what you want for full
+coverage of short-lived processes.
 
 ## Development (macOS / no root)
 
@@ -53,9 +54,9 @@ Key knobs:
 - `privacy.*`: redaction and what may reach the model.
 - `notifications.*`: channels + severity routing (see below).
 
-Secrets belong in the environment, not the config file. Ship them via
-`EnvironmentFile=/etc/ares/ares.env` (already referenced by the systemd units) —
-template: [../examples/ares.env.example](../examples/ares.env.example).
+Keep secrets in the environment and out of the config file. The systemd units
+already read `EnvironmentFile=/etc/ares/ares.env`, so drop them there. There's a
+template at [../examples/ares.env.example](../examples/ares.env.example).
 
 ## AI investigation (OpenRouter default)
 
@@ -66,12 +67,12 @@ export OPENROUTER_MODEL=anthropic/claude-3.5-sonnet   # any OpenRouter model id
 
 Switch backends with `investigation.model_provider`:
 
-- `openrouter` — `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` (default).
-- `openai` / self-hosted gateway — `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`.
-- `anthropic` — `ANTHROPIC_API_KEY` (`pip install ares-agent[ai]`).
-- `local` — deterministic, no external model.
+- `openrouter` (default): `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`.
+- `openai` or a self-hosted gateway: `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`.
+- `anthropic`: `ANTHROPIC_API_KEY` (`pip install ares-agent[ai]`).
+- `local`: deterministic, runs with no external model.
 
-If the provider/key is unavailable the investigator falls back to `local`, so
+When the provider or key isn't there, the investigator drops back to `local`, so
 the pipeline keeps producing verdicts (spec §25.2).
 
 ## Notifications
@@ -93,8 +94,8 @@ ares notify channels     # what's active
 ares notify test         # send a synthetic alert through every channel
 ```
 
-All channels are push-only (outbound HTTPS/SMTP). A failing channel is logged
-and never breaks the investigation cycle (spec §25.2).
+Every channel is push-only over outbound HTTPS or SMTP. If one fails, Ares logs
+it and the investigation cycle carries on (spec §25.2).
 
 ## Operations
 
@@ -113,6 +114,6 @@ ares baseline status
 
 ## Backpressure & health
 
-Under load the daemon keeps collecting, drops only when the buffer is full
-(counted in `events_dropped`), and the scheduler records lag. Monitor via
-`ares status` / the `sensor_health` table.
+Under load the daemon keeps collecting. It only drops events when the buffer
+fills, and it counts those in `events_dropped`. The scheduler tracks its own lag.
+You can watch all of this through `ares status` or the `sensor_health` table.

@@ -8,7 +8,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.1.0] - 2026-07-31
 
-Initial public release — Phase 1 plus the core of Phase 2.
+Initial public release. Covers Phase 1 and the core of Phase 2.
 
 ### Added
 
@@ -24,10 +24,11 @@ Initial public release — Phase 1 plus the core of Phase 2.
 - **AI investigator** with typed read-only tools, budgets, and a structured
   verdict. Default provider is **OpenRouter** (any model via env vars); also
   supports OpenAI-compatible endpoints, Anthropic, and a no-API `local` mode.
-- **Policy & response engine** — evidence actions auto-run; containment/recovery
-  require approval and carry rollback metadata; destructive actions prohibited.
-- **Multi-channel notifications** — Slack, generic webhook, email/SMTP, and
-  PagerDuty, with global + per-channel severity routing (all env-configurable).
+- **Policy & response engine.** Evidence actions run on their own. Containment
+  and recovery need approval and carry rollback metadata. Destructive actions are
+  prohibited.
+- **Multi-channel notifications:** Slack, generic webhook, email/SMTP, and
+  PagerDuty, with global and per-channel severity routing (all env-configurable).
 - **One-minute investigation scheduler** with a lease lock and durable watermark.
 - **SQLite storage** (WAL) with per-band retention.
 - **CLI** (`ares`) and a Python API (`from ares import Ares`).

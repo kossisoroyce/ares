@@ -3,7 +3,7 @@
 Two patterns, depending on whether you want to protect **whole nodes** or a
 **single app**.
 
-## Pattern A — DaemonSet (node-level, eBPF) — recommended for clusters you own
+## Pattern A: DaemonSet (node-level, eBPF), for clusters you own
 
 One Ares pod per node, with the privileges to load eBPF and see every workload
 on that node. This is the strongest posture and matches how EDRs deploy.
@@ -57,7 +57,7 @@ kubectl apply -f ares-daemonset.yaml
 > `privileged`/`hostPID`. If the DaemonSet can't get them, use the sidecar
 > pattern below (procfs fallback).
 
-## Pattern B — Sidecar (per-pod, works anywhere)
+## Pattern B: sidecar (per-pod, works anywhere)
 
 Run Ares as an extra container in your app's pod. **Share the process namespace**
 so Ares can see the app container's processes.

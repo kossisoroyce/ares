@@ -2,8 +2,8 @@
 
 Railway runs your service in a managed container without host privileges, so
 Ares runs as an **in-container companion** using the procfs fallback (spec §8.2).
-It monitors your service's own processes — exactly what you want for a single
-app service.
+It monitors your service's own processes, which is what you want for a single app
+service.
 
 ## Recommended: a Dockerfile service
 
@@ -60,7 +60,8 @@ before your server, e.g. in `railway.json`:
 
 ## Expectations on Railway
 
-- `ares status` will show `ebpf_process_events: false` (no privileged kernel
-  access) — the procfs fallback is active. This is normal for managed PaaS.
+- `ares status` will show `ebpf_process_events: false`, since there's no
+  privileged kernel access, so the procfs fallback is running. This is normal for
+  managed PaaS.
 - Ares sees the processes in **this** container, which for a typical single-app
   Railway service is precisely your backend.

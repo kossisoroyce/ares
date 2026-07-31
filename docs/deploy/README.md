@@ -1,16 +1,17 @@
 # Deploying Ares alongside your backend
 
-Ares watches the **host and kernel**, not your application code — so it is
-**language-agnostic**. Whether your backend is Python, Rust, Go, Node, Java, or
-Elixir, Ares monitors process, network, and filesystem activity the same way.
+Ares watches the host and its kernel. It never reads your application code, so
+the language your backend is written in makes no difference to it. Python, Rust,
+Go, Node, Java, Elixir: underneath all of them Ares sees the same activity, which
+is process starts, network connections, and file changes.
 
-This guide is for teams shipping backends to platforms like **Fly.io**,
-**Railway**, **Render**, **Kubernetes**, or a plain **VM**, who want runtime
-security monitoring next to their app.
+This guide is for anyone running a backend on Fly.io, Railway, Render,
+Kubernetes, or a plain VM who wants Ares watching alongside it.
 
 ## Pick a deployment model
 
-There are two ways to run Ares. Choose based on how much of the host you control.
+There are two ways to run Ares, and which one fits depends on how much of the
+host you control.
 
 | Model | You get | Sensor backend | Best on |
 | ----- | ------- | -------------- | ------- |
@@ -28,38 +29,39 @@ Host-level (privileged)                In-container companion (unprivileged)
 └───────────────────────────┘
 ```
 
-> **Reality check on eBPF.** eBPF needs a real kernel and elevated capabilities
-> (`CAP_BPF`/`CAP_PERFMON`, or privileged). Many managed PaaS run your code in a
-> locked-down container where eBPF is unavailable — there Ares automatically
-> uses the **procfs fallback** (spec §8.2). The fallback can miss processes that
-> start and exit between polls; for full short-lived-process coverage you need a
-> host where eBPF can load. `ares status` always shows which sensors are active.
+> **Reality check on eBPF.** eBPF needs a real kernel and elevated privileges
+> (`CAP_BPF`/`CAP_PERFMON`, or a privileged container). Plenty of managed
+> platforms run your code locked down, and there Ares uses the procfs fallback
+> instead (spec §8.2). The fallback can miss a process that starts and exits
+> between two polls, so full coverage of short-lived processes needs a host where
+> eBPF can load. `ares status` always tells you which sensors are live.
 
-## Language notes (important)
+## Language notes
 
-Ares is distributed as a **Python package** (`ares-agent`). That affects *where*
-it runs, not *what* it can watch:
+Ares ships as a Python package (`ares-agent`). That changes where you run it. It
+has no bearing on what it can see.
 
-- **Python backends** — install `ares-agent` into the same image/venv and run it
-  next to your app. See [docker.md](docker.md).
-- **Rust / Go / Node / other** — your app image usually has no Python runtime, so
-  run Ares as a **sidecar** (a separate container in the same pod, or a second
-  service sharing the process namespace) rather than installing it into your app
-  image. See [kubernetes.md](kubernetes.md) and [docker.md](docker.md#sidecar).
+- **Python backends.** Install `ares-agent` into the same image or venv and run
+  it next to your app. See [docker.md](docker.md).
+- **Rust, Go, Node, and everything else.** Those images usually have no Python in
+  them, so run Ares as a sidecar: a separate container in the same pod, or a
+  second service that shares the process namespace. See
+  [kubernetes.md](kubernetes.md) and [docker.md](docker.md#sidecar).
 
-> **To see your app's processes from a sidecar, share the PID namespace.**
-> Without it, the sidecar only sees itself. In Kubernetes set
-> `shareProcessNamespace: true`; in Docker Compose set `pid: "service:app"`.
+> **A sidecar needs the shared PID namespace to see your app.** On its own it
+> only sees itself. Set `shareProcessNamespace: true` in Kubernetes, or
+> `pid: "service:app"` in Docker Compose.
 
-## What actually needs to run
+## What needs to run
 
-Ares is two processes over one SQLite store (see [../architecture.md](../architecture.md)):
+Ares is two processes over one SQLite store (see
+[../architecture.md](../architecture.md)):
 
-1. **daemon** — `ares daemon run` (continuous collection + detection)
-2. **investigator** — `ares investigator run` (the one-minute AI cycle)
+1. **daemon** (`ares daemon run`) collects events and runs detection.
+2. **investigator** (`ares investigator run`) runs the one-minute cycle.
 
-In a container you typically start both in the background from an entrypoint and
-then exec your app as PID 1. Platform recipes below show the exact wiring.
+In a container you start both in the background from your entrypoint, then hand
+off to your app as PID 1. The platform pages below have the exact wiring.
 
 ## Minimum configuration for any platform
 
@@ -70,7 +72,7 @@ Set these as environment variables (12-factor; see
 # State dir Ares can write to (must be writable by the app user).
 ARES_STATE_DIR=/data/ares            # or a mounted volume
 
-# AI investigator (default provider is OpenRouter — any model).
+# AI investigator. OpenRouter is the default and takes any model.
 OPENROUTER_API_KEY=sk-or-...
 OPENROUTER_MODEL=anthropic/claude-3.5-sonnet
 
@@ -79,16 +81,16 @@ ARES_SLACK_WEBHOOK=https://hooks.slack.com/services/...
 ARES_NOTIFY_MIN_SEVERITY=high
 ```
 
-No API key? Ares still runs — the investigator falls back to the deterministic
-`local` provider and detection/notifications keep working.
+No API key yet? Ares still runs. The investigator uses the built-in `local`
+analyzer, and detection and alerting carry on as normal.
 
 ## Platform recipes
 
-- [Docker & Docker Compose](docker.md) — the building block for everything below
-- [Fly.io](fly-io.md) — microVMs (host-level eBPF possible)
-- [Railway](railway.md) — managed containers (in-container companion)
-- [Kubernetes](kubernetes.md) — DaemonSet (node-level) or sidecar (per-pod)
-- [Bare VM / systemd](../deployment.md) — the classic host install
+- [Docker & Docker Compose](docker.md), the building block for the rest
+- [Fly.io](fly-io.md), microVMs where host-level eBPF can work
+- [Railway](railway.md), managed containers running the in-container companion
+- [Kubernetes](kubernetes.md), a DaemonSet across nodes or a sidecar per pod
+- [Bare VM / systemd](../deployment.md), the plain host install
 
 ## Verify it works anywhere
 

@@ -19,14 +19,14 @@ sensor.emit(event)
 ```
 
 Immediate findings (spec §13) trigger `_handle_immediate`: capture volatile
-process state, hash the executable, freeze the baseline, and notify — all before
-the one-minute cycle, so evidence survives short-lived processes.
+process state, hash the executable, freeze the baseline, and notify. All of that
+happens before the one-minute cycle, so evidence survives short-lived processes.
 
 ### Investigation scheduler (`ares.scheduler.InvestigationScheduler`, spec §15)
 
 Every 60s (systemd timer or `ares investigator run`):
 
-1. Acquire the lease lock (`scheduler_state` row with expiry) — prevents overlap.
+1. Acquire the lease lock (a `scheduler_state` row with an expiry), which prevents overlap.
 2. Read unprocessed events.
 3. Correlate into sequences (host + time-proximity sessionization).
 4. Score sequences (§16.3).

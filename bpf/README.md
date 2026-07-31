@@ -1,8 +1,9 @@
 # eBPF sensors
 
 These CO-RE eBPF programs are the preferred Linux collectors (spec 8.1). They
-compile only on a Linux host with the BPF toolchain — editor/clang warnings
-about `vmlinux.h` and `__u32` on non-Linux machines are expected and harmless.
+compile only on a Linux host that has the BPF toolchain. On other machines your
+editor or clang will warn about `vmlinux.h` and `__u32`, and those warnings are
+expected and harmless.
 
 ## Prerequisites (Linux)
 

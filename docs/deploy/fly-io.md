@@ -1,8 +1,9 @@
 # Fly.io
 
-Fly runs your app in a **Firecracker microVM**, so you have more of the machine
-than a typical managed container — a good fit for running Ares next to your
-backend. Use the [Docker patterns](docker.md) to build the image, then wire Fly.
+Fly runs your app in a **Firecracker microVM**, so you get more of the machine
+than a typical managed container gives you. That makes it a good place to run
+Ares next to your backend. Use the [Docker patterns](docker.md) to build the
+image, then wire Fly.
 
 ## fly.toml
 
@@ -53,9 +54,9 @@ not permit loading eBPF programs. Check after deploy:
 fly ssh console -C "ares status"
 ```
 
-If `ebpf_process_events` is `false`, Ares is using the procfs fallback — still
-useful, just without kernel-level short-lived-process capture. Treat eBPF as a
-bonus on Fly, not a guarantee.
+If `ebpf_process_events` is `false`, Ares is running on the procfs fallback. It
+covers most activity. Processes that come and go between polls can slip past it.
+On Fly, treat eBPF as a bonus you might get.
 
 ## Non-Python backends on Fly
 

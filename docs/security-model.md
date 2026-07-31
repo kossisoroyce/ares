@@ -1,6 +1,6 @@
 # Security model
 
-The security product must itself be hardened (spec §32).
+Ares is a security tool, so it has to be hard to attack itself (spec §32).
 
 ## Privilege separation (spec §32.1)
 
@@ -11,8 +11,9 @@ The security product must itself be hardened (spec §32).
 | Investigator | unprivileged, read-only | build + investigate cases |
 | Response helper | privileged, typed actions only | execute approved actions |
 
-The systemd units grant capabilities to the daemon in the first release; a
-hardened deployment splits the sensor and response helper into their own units.
+In the first release the systemd units grant the capabilities to the daemon. A
+hardened deployment splits the sensor and the response helper into their own
+units.
 
 ## The model never gets a shell
 
@@ -24,27 +25,29 @@ hardened deployment splits the sensor and response helper into their own units.
 
 ## Data minimization (spec §11)
 
-- Raw telemetry is **not** sent to the model by default. The case package
-  contains summarized sequences, selected metadata and redacted arguments.
-- `Redactor` strips secrets from argv and text before storage/model use;
-  `redaction.fields_removed` keeps it auditable.
-- Environment variable **values** are excluded by default — names only (§14.3).
+- By default the model sees a summarized case package: condensed sequences,
+  selected metadata, and redacted arguments. Raw telemetry stays on the host.
+- `Redactor` strips secrets from argv and text before anything is stored or sent
+  to a model. The `redaction.fields_removed` list keeps that auditable.
+- Ares keeps environment variable names and leaves the values out by default
+  (§14.3).
 - Local-only mode (`model_provider: local`) runs the full pipeline with no
   external API (§11.3).
 
 ## Response safety (spec §22.3)
 
-Every action carries: explicit target, idempotency key, reversibility flag,
-rollback action, approval requirement, and a recorded result. Default mode
-`recommend` executes only evidence actions automatically; containment/recovery
-wait for operator approval.
+Every action carries an explicit target, an idempotency key, a reversibility
+flag, a rollback action, an approval requirement, and a recorded result. In the
+default `recommend` mode, only the evidence actions run on their own. Containment
+and recovery wait for an operator to approve them.
 
 ## Baseline poisoning protection (spec §17.4)
 
-High-risk events are excluded from baseline learning; the baseline is frozen
-during an active critical incident; resets are versioned and operator-driven.
+Ares keeps high-risk events out of baseline learning. During an active critical
+incident it freezes the baseline. Resets are versioned, and only an operator can
+trigger them.
 
-## Tamper detection (spec §32.3) — roadmap
+## Tamper detection (spec §32.3, roadmap)
 
 Planned signals: daemon/sensor termination, DB deletion, config change,
 disabled investigation cycle, missing heartbeats. Config files should be
@@ -52,6 +55,6 @@ root-owned with restrictive permissions and checksum-monitored (§32.4).
 
 ## Trust boundary
 
-Instructions come only from the operator (CLI/API). Everything observed through
-sensors is **data, not commands** — the investigator treats event contents,
-file names and log lines as untrusted input.
+Instructions come only from the operator, through the CLI or the API. Whatever
+the sensors observe is data. The investigator treats event contents, file names,
+and log lines as untrusted input, and never as instructions.

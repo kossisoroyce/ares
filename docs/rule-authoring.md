@@ -1,7 +1,7 @@
 # Authoring detection rules
 
 Rules are the deterministic layer (spec §12). They run on every event and return
-a `Finding` or `None`. Keep them cheap — expensive reasoning belongs in the
+a `Finding` or `None`. Keep them cheap. The expensive reasoning belongs in the
 investigator.
 
 ## Minimal rule
@@ -30,9 +30,9 @@ and `event_ids` for you.
 
 ## RuleContext
 
-- `context.store` — read-only lookups (`get_process`, `process_ancestry`,
-  `observe_destination`, `baseline_count`, ...).
-- `context.parent_process(event)` — the parent process row, if known.
+- `context.store`: read-only lookups (`get_process`, `process_ancestry`,
+  `observe_destination`, `baseline_count`).
+- `context.parent_process(event)`: the parent process row, when it's known.
 - `context.host_role`, `context.environment`.
 
 ## Registering rules
@@ -44,10 +44,12 @@ engine = DetectionEngine(store, rules=[*BUILTIN_RULES, UnexpectedShellRule()])
 
 ## Severity, scoring and the immediate path
 
-- `severity`: `info|low|medium|high|critical` — feeds sequence scoring (§16.3).
+- `severity`: one of `info|low|medium|high|critical`, which feeds sequence
+  scoring (§16.3).
 - `risk_score` ≥ `immediate_alert_threshold` (default 0.90) **or** `immediate=True`
-  routes the finding to the critical path (§13): evidence capture + alert now.
-- Stateful rules (e.g. failed-login bursts) keep state on the instance; create a
+  routes the finding to the critical path (§13), which captures evidence and
+  alerts right away.
+- Stateful rules like failed-login bursts keep state on the instance, so create a
   fresh instance per engine.
 
 ## Suppressions
@@ -57,7 +59,7 @@ Findings are dropped when an active suppression matches on `rule_id`, `host_id`,
 
 ## Tips for precision
 
-- Prefer combinations (interpreter **and** decoded-code) over single weak
-  signals — see `EncodedCommandArguments` for why bare base64 is a false-positive
-  magnet.
-- Use the baseline (`context.store.baseline_count`) to gate "new/rare" rules.
+- Combine signals where you can. Look at `EncodedCommandArguments`, which fires
+  on an interpreter together with decoded code, because a bare base64 blob on its
+  own throws far too many false positives.
+- Use the baseline (`context.store.baseline_count`) to gate "new or rare" rules.

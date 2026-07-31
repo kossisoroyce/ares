@@ -42,8 +42,9 @@ Built by `ares.events.process_identity(...)`.
 
 ## Accessing fields
 
-`Event.get(key)` looks in `payload` first, then `enrichment` — rules use this so
-they don't care whether a value was collected or derived.
+`Event.get(key)` looks in `payload` first, then `enrichment`. Rules lean on this,
+so they don't have to know whether a value came from the sensor or from later
+enrichment.
 
 ## Example
 
