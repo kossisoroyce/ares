@@ -48,7 +48,10 @@ jobs:
           path: dist
       - name: Publish
         uses: pypa/gh-action-pypi-publish@release/v1
-        # Attestations are generated and uploaded automatically.
+        with:
+          # Don't fail the release if this version is already on PyPI (e.g. a
+          # re-run or a repo recreate). Attestations are generated automatically.
+          skip-existing: true
 
   github-release:
     name: Attach artifacts to GitHub Release

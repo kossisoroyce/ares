@@ -7,8 +7,9 @@
 
 <p align="center">
   <a href="https://github.com/kossisoroyce/ares/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/kossisoroyce/ares/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="https://pypi.org/project/ares-agent/"><img alt="PyPI" src="https://img.shields.io/pypi/v/ares-agent.svg"></a>
-  <a href="https://pypi.org/project/ares-agent/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/ares-agent.svg"></a>
+  <a href="https://pypi.org/project/ares-agent/"><img alt="PyPI" src="https://img.shields.io/pypi/v/ares-agent?color=blue"></a>
+  <a href="https://pypi.org/project/ares-agent/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/ares-agent"></a>
+  <a href="https://pepy.tech/project/ares-agent"><img alt="Downloads" src="https://img.shields.io/pypi/dm/ares-agent?color=blue"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
   <a href="https://github.com/astral-sh/ruff"><img alt="Ruff" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json"></a>
 </p>
